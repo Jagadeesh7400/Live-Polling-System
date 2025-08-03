@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import socket from "./socket";
 import "./App.css";
-import "./components/TeacherDashboard.css";
-import TeacherDashboard from "./components/TeacherDashboard";
-import StudentDashboard from "./components/StudentDashboard";
+import "./Components/TeacherDashboard.css";
+import TeacherDashboard from "./Components/TeacherDashboard";
+import StudentDashboard from "./Components/StudentDashboard";
 
 function App() {
   const [persona, setPersona] = useState(null);
