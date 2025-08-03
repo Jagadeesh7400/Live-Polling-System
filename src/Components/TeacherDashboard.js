@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
 import PollResults from "./PollResults";
 import ChatPopup from "./ChatPopup";
+import ApiService from "../services/api";
 import "./TeacherDashboard.css";
 
 const TIMER_OPTIONS = [30, 45, 60, 90, 120];
 
-function TeacherDashboard({ socket }) {
+function TeacherDashboard() {
   const [question, setQuestion] = useState("");
   const [options, setOptions] = useState([
     { text: "", correct: false },
@@ -14,25 +15,62 @@ function TeacherDashboard({ socket }) {
   const [timer, setTimer] = useState(60);
   const [showDropdown, setShowDropdown] = useState(false);
   const [pollCreated, setPollCreated] = useState(false);
-  const [answers, setAnswers] = useState({});
+  const [results, setResults] = useState({});
   const [pollHistory, setPollHistory] = useState([]);
   const [showChat, setShowChat] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    socket.on("poll_update", (data) => {
-      setAnswers(data);
-    });
+    // Check for existing poll on component mount
+    checkForExistingPoll();
+    
+    // Poll for results every 2 seconds when poll is active
+    let interval;
+    if (pollCreated) {
+      interval = setInterval(fetchResults, 2000);
+    }
+    
     return () => {
-      socket.off("poll_update");
+      if (interval) clearInterval(interval);
     };
-  }, [socket]);
+  }, [pollCreated]);
 
-  useEffect(() => {
-    fetch("/api/poll-history")
-      .then(res => res.json())
-      .then(data => setPollHistory(data));
-  }, []);
+  const checkForExistingPoll = async () => {
+    try {
+      const poll = await ApiService.getCurrentPoll();
+      if (poll) {
+        setQuestion(poll.question);
+        setOptions(poll.options.map((opt, idx) => ({
+          text: opt,
+          correct: poll.correct[idx]
+        })));
+        setTimer(poll.timer);
+        setPollCreated(true);
+        fetchResults();
+      }
+    } catch (error) {
+      console.error('Error checking for existing poll:', error);
+    }
+  };
+
+  const fetchResults = async () => {
+    try {
+      const data = await ApiService.getPollResults();
+      setResults(data.answers || {});
+    } catch (error) {
+      console.error('Error fetching results:', error);
+    }
+  };
+
+  const fetchPollHistory = async () => {
+    try {
+      const history = await ApiService.getPollHistory();
+      setPollHistory(history);
+    } catch (error) {
+      console.error('Error fetching poll history:', error);
+    }
+  };
 
   const handleOptionChange = (idx, value) => {
     const newOptions = [...options];
@@ -50,27 +88,43 @@ function TeacherDashboard({ socket }) {
     setOptions([...options, { text: "", correct: false }]);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (question.trim() && options.every(opt => opt.text.trim())) {
-      setPollCreated(true);
-      socket.emit("create_poll", {
-        question,
-        options: options.map(opt => opt.text),
-        correct: options.map(opt => opt.correct),
-        timer
-      });
+      setIsLoading(true);
+      try {
+        await ApiService.createPoll({
+          question,
+          options: options.map(opt => opt.text),
+          correct: options.map(opt => opt.correct),
+          timer
+        });
+        setPollCreated(true);
+        fetchResults();
+      } catch (error) {
+        console.error('Error creating poll:', error);
+        alert('Failed to create poll. Please try again.');
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
-  const handleNewPoll = () => {
+  const handleNewPoll = async () => {
     setQuestion("");
     setOptions([
       { text: "", correct: false },
       { text: "", correct: false }
     ]);
     setPollCreated(false);
-    setAnswers({});
+    setResults({});
+    
+    // Clear existing poll data
+    try {
+      await ApiService.clearData();
+    } catch (error) {
+      console.error('Error clearing poll data:', error);
+    }
   };
 
   return (
@@ -170,8 +224,8 @@ function TeacherDashboard({ socket }) {
             + Add More option
           </button>
           <div className="teacher-bottom-bar">
-            <button type="submit" className="ask-question-btn">
-              Ask Question
+            <button type="submit" className="ask-question-btn" disabled={isLoading}>
+              {isLoading ? "Creating Poll..." : "Ask Question"}
             </button>
           </div>
         </form>
@@ -182,8 +236,8 @@ function TeacherDashboard({ socket }) {
             <div className="poll-card-header">{question}</div>
             <div className="poll-card-options">
               {options.map((opt, i) => {
-                const total = Object.keys(answers).length || 1;
-                const count = Object.values(answers).filter(a => a === opt.text).length;
+                const total = Object.keys(results).length || 1;
+                const count = Object.values(results).filter(a => a === opt.text).length;
                 const percent = Math.round((count / total) * 100);
                 return (
                   <div className="poll-card-option-row" key={i}>
@@ -217,10 +271,13 @@ function TeacherDashboard({ socket }) {
             💬
           </button>
           <ChatPopup open={showChat} onClose={() => setShowChat(false)} />
-          {Object.keys(answers).length > 0 && (
+          {Object.keys(results).length > 0 && (
             <button
               className="view-history-btn"
-              onClick={() => setShowHistory(true)}
+              onClick={() => {
+                setShowHistory(true);
+                fetchPollHistory();
+              }}
             >
               👁️ View Poll History
             </button>

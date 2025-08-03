@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from "react";
-import socket from "./socket";
+import React, { useState } from "react";
 import "./App.css";
 import "./Components/TeacherDashboard.css";
 import TeacherDashboard from "./Components/TeacherDashboard";
@@ -8,13 +7,6 @@ import StudentDashboard from "./Components/StudentDashboard";
 function App() {
   const [persona, setPersona] = useState(null);
   const [selected, setSelected] = useState(null);
-
-  useEffect(() => {
-    socket.connect();
-    return () => {
-      socket.disconnect();
-    };
-  }, []);
 
   return (
     <div className="app-container">
@@ -59,9 +51,9 @@ function App() {
           </button>
         </div>
       ) : persona === "teacher" ? (
-        <TeacherDashboard socket={socket} />
+        <TeacherDashboard />
       ) : (
-        <StudentDashboard socket={socket} />
+        <StudentDashboard />
       )}
     </div>
   );

@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
 import ChatPopup from "./ChatPopup";
+import ApiService from "../services/api";
 import "./StudentDashboard.css";
 
 
-function StudentDashboard({ socket }) {
+function StudentDashboard() {
   const [name, setName] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [answer, setAnswer] = useState("");
@@ -15,37 +16,29 @@ function StudentDashboard({ socket }) {
   const [existingNames, setExistingNames] = useState([]);
   const [showChat, setShowChat] = useState(false);
   const [kicked, setKicked] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    socket.on("poll_created", (data) => {
-      setPoll(data);
-      setAnswered(false);
-      setAnswer("");
-      setResults({});
-      setTimeLeft(data.timer || 60); // use poll's timer
-    });
-    socket.on("poll_update", (data) => {
-      setResults(data);
-    });
-    // Fetch existing student names from server or socket
-    socket.on("student_names", (names) => {
-      setExistingNames(names);
-    });
-    socket.on("kicked", () => {
-      setKicked(true);
-    });
-    socket.emit("get_student_names");
-    return () => {
-      socket.off("poll_created");
-      socket.off("poll_update");
-      socket.off("student_names");
-      socket.off("kicked");
-    };
-  }, [socket]);
+    // Check for existing poll and get student names
+    checkForPoll();
+    getStudentNames();
+    
+    // Poll for updates every 3 seconds
+    const interval = setInterval(() => {
+      if (submitted && !answered) {
+        checkForPoll();
+      }
+      if (answered) {
+        fetchResults();
+      }
+    }, 3000);
+    
+    return () => clearInterval(interval);
+  }, [submitted, answered]);
 
+  // Timer effect for poll countdown
   useEffect(() => {
-    if (poll && !answered) {
-      setTimeLeft(poll.timer || 60); // <-- use poll's timer value
+    if (poll && !answered && timeLeft > 0) {
       const timer = setInterval(() => {
         setTimeLeft(prev => {
           if (prev <= 1) {
@@ -58,36 +51,88 @@ function StudentDashboard({ socket }) {
       }, 1000);
       return () => clearInterval(timer);
     }
-  }, [poll, answered]);
+  }, [poll, answered, timeLeft]);
+
+  const checkForPoll = async () => {
+    try {
+      const currentPoll = await ApiService.getCurrentPoll();
+      if (currentPoll && currentPoll !== poll) {
+        setPoll(currentPoll);
+        setAnswered(false);
+        setAnswer("");
+        setResults({});
+        setTimeLeft(currentPoll.timer || 60);
+      }
+    } catch (error) {
+      console.error('Error checking for poll:', error);
+    }
+  };
+
+  const getStudentNames = async () => {
+    try {
+      const names = await ApiService.getStudents();
+      setExistingNames(names);
+    } catch (error) {
+      console.error('Error getting student names:', error);
+    }
+  };
+
+  const fetchResults = async () => {
+    try {
+      const data = await ApiService.getPollResults();
+      setResults(data.answers || {});
+    } catch (error) {
+      console.error('Error fetching results:', error);
+    }
+  };
 
   useEffect(() => {
     if (submitted) {
-      socket.emit("get_poll");
+      checkForPoll();
     }
-  }, [submitted, socket]);
+  }, [submitted]);
 
-  const handleNameSubmit = (e) => {
+  const handleNameSubmit = async (e) => {
     e.preventDefault();
-    // Only alphabets, no spaces, no numbers
+    
+    // Validation
     if (!/^[A-Za-z]+$/.test(name)) {
       setError("Name must contain only alphabets (A-Z, a-z) and no spaces.");
       return;
     }
-    // Uniqueness check
+    
     if (existingNames.includes(name)) {
       setError("This name is already taken. Please choose a unique name.");
       return;
     }
-    setError("");
-    setSubmitted(true);
-    socket.emit("student_join", name);
+    
+    setIsLoading(true);
+    try {
+      await ApiService.joinAsStudent(name);
+      setError("");
+      setSubmitted(true);
+      getStudentNames(); // Refresh the names list
+    } catch (error) {
+      setError(error.message || "Failed to join. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleAnswerSubmit = (e) => {
+  const handleAnswerSubmit = async (e) => {
     e.preventDefault();
-    if (answer) {
-      setAnswered(true);
-      socket.emit("submit_answer", { name, answer });
+    if (answer && !answered) {
+      setIsLoading(true);
+      try {
+        await ApiService.submitAnswer(name, answer);
+        setAnswered(true);
+        fetchResults();
+      } catch (error) {
+        console.error('Error submitting answer:', error);
+        alert('Failed to submit answer. Please try again.');
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
