@@ -1,15 +1,33 @@
 // API service for polling system
-const API_BASE = window.location.hostname === 'localhost' 
-  ? 'http://localhost:5000' 
-  : '';
+const API_BASE = process.env.NODE_ENV === 'production' 
+  ? window.location.origin 
+  : 'http://localhost:5000';
 
 class ApiService {
   async get(endpoint) {
-    const response = await fetch(`${API_BASE}/api${endpoint}`);
-    if (!response.ok) {
-      throw new Error(`API Error: ${response.statusText}`);
+    try {
+      console.log(`Making GET request to: ${API_BASE}/api${endpoint}`);
+      const response = await fetch(`${API_BASE}/api${endpoint}`);
+      
+      if (!response.ok) {
+        // Check if response is HTML (error page)
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('text/html')) {
+          const htmlText = await response.text();
+          console.error('Received HTML instead of JSON:', htmlText.substring(0, 200));
+          throw new Error(`API Error: ${response.status} - Server returned HTML instead of JSON`);
+        }
+        
+        throw new Error(`API Error: ${response.statusText}`);
+      }
+      
+      const result = await response.json();
+      console.log('API GET Success:', result);
+      return result;
+    } catch (error) {
+      console.error('API GET Failed:', error);
+      throw error;
     }
-    return response.json();
   }
 
   async post(endpoint, data) {
@@ -25,6 +43,14 @@ class ApiService {
       });
       
       if (!response.ok) {
+        // Check if response is HTML (error page)
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('text/html')) {
+          const htmlText = await response.text();
+          console.error('Received HTML instead of JSON:', htmlText.substring(0, 200));
+          throw new Error(`API Error: ${response.status} - Server returned HTML instead of JSON`);
+        }
+        
         let errorMessage;
         try {
           const errorData = await response.json();
@@ -37,17 +63,18 @@ class ApiService {
       }
       
       const result = await response.json();
-      console.log('API Success Response:', result);
+      console.log('API POST Success:', result);
       return result;
     } catch (error) {
-      console.error('API Request Failed:', error);
+      console.error('API POST Failed:', error);
       throw error;
     }
   }
 
   // Poll management
   async getCurrentPoll() {
-    return this.get('/poll');
+    const result = await this.get('/poll');
+    return result || null;
   }
 
   async createPoll(pollData) {
@@ -69,6 +96,19 @@ class ApiService {
 
   async submitAnswer(name, answer) {
     return this.post('/answer', { name, answer });
+  }
+
+  async removeStudent(name) {
+    return this.post('/remove-student', { name });
+  }
+
+  // Chat functionality
+  async getChatHistory() {
+    return this.get('/chat-history');
+  }
+
+  async sendChatMessage(messageData) {
+    return this.post('/chat-message', messageData);
   }
 
   // Utility

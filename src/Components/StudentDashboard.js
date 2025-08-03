@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import ChatPopup from "./ChatPopup";
 import ApiService from "../services/api";
+import socketService from "../socket";
 import "./StudentDashboard.css";
 
 
@@ -19,11 +20,39 @@ function StudentDashboard() {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
+    // Initialize Socket.io connection
+    socketService.connect();
+    
     // Check for existing poll and get student names
     checkForPoll();
     getStudentNames();
+
+    // Set up real-time listeners
+    socketService.on('poll_created', (pollData) => {
+      console.log('New poll received:', pollData);
+      setPoll(pollData);
+      setAnswered(false);
+      setAnswer("");
+      setResults({});
+      setTimeLeft(pollData.timer || 60);
+    });
+
+    socketService.on('poll_update', (answers) => {
+      console.log('Poll update received:', answers);
+      setResults(answers);
+    });
+
+    socketService.on('student_removed', (removedName) => {
+      if (removedName === name) {
+        setKicked(true);
+      }
+    });
+
+    socketService.on('student_names', (names) => {
+      setExistingNames(names);
+    });
     
-    // Poll for updates every 3 seconds
+    // Poll for updates every 3 seconds (backup to Socket.io)
     const interval = setInterval(() => {
       if (submitted && !answered) {
         checkForPoll();
@@ -33,8 +62,15 @@ function StudentDashboard() {
       }
     }, 3000);
     
-    return () => clearInterval(interval);
-  }, [submitted, answered]);
+    return () => {
+      clearInterval(interval);
+      // Clean up Socket.io listeners
+      socketService.off('poll_created');
+      socketService.off('poll_update');
+      socketService.off('student_removed');
+      socketService.off('student_names');
+    };
+  }, [submitted, answered, name]);
 
   // Timer effect for poll countdown
   useEffect(() => {
@@ -109,6 +145,8 @@ function StudentDashboard() {
     setIsLoading(true);
     try {
       await ApiService.joinAsStudent(name);
+      // Also join via Socket.io for real-time updates
+      socketService.joinAsStudent(name);
       setError("");
       setSubmitted(true);
       getStudentNames(); // Refresh the names list
@@ -125,6 +163,8 @@ function StudentDashboard() {
       setIsLoading(true);
       try {
         await ApiService.submitAnswer(name, answer);
+        // Also emit via Socket.io for real-time updates
+        socketService.submitAnswer({ name, answer });
         setAnswered(true);
         fetchResults();
       } catch (error) {
@@ -304,7 +344,13 @@ function StudentDashboard() {
               >
                 💬
               </button>
-              <ChatPopup open={showChat} onClose={() => setShowChat(false)} />
+              <ChatPopup 
+                open={showChat} 
+                onClose={() => setShowChat(false)} 
+                studentNames={[]}
+                isTeacher={false}
+                studentName={name}
+              />
             </div>
           )}
         </div>

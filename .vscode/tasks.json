@@ -11,6 +11,27 @@
 			],
 			"group": "build",
 			"isBackground": false
+		},
+		{
+			"label": "Start Frontend",
+			"type": "shell",
+			"command": "npm",
+			"args": ["start"],
+			"group": "build",
+			"isBackground": true,
+			"problemMatcher": []
+		},
+		{
+			"label": "Start Backend",
+			"type": "shell",
+			"command": "npm",
+			"args": ["start"],
+			"group": "build",
+			"isBackground": true,
+			"problemMatcher": [],
+			"options": {
+				"cwd": "${workspaceFolder}/server"
+			}
 		}
 	]
 }

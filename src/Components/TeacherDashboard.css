@@ -1,12 +1,28 @@
 /* Add below your existing CSS */
 
 .teacher-container {
-  padding: 40px 0;
+  padding-top: 50px;
+  padding-left: 100px;
+  display: block;
   min-height: 100vh;
   background: #fff;
+}.teacher-option-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding: 0.8rem;
+  border-radius: 8px;
+  border: 1px solid #eee;
+  background: #fff;
+  transition: all 0.3s ease;
 }
 
-.intervue-badge {
+.teacher-option-item.correct-answer {
+  border: 2px solid #10B981;
+  background: #F0FDF4;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.1);
+}ntervue-badge {
   font-size: 1.1rem;
   font-weight: 600;
   color: #7367F0;
@@ -23,15 +39,13 @@
 .teacher-desc {
   font-size: 1.1rem;
   color: #555;
-  margin-bottom: 2rem;
+  margin-bottom: 0.4rem;
 }
 
 .teacher-form {
   background: #fff;
   border-radius: 12px;
-  box-shadow: 0 2px 16px rgba(59,130,246,0.08);
-  padding: 2rem;
-  max-width: 540px;
+  max-width: 900px;
   margin: 0 auto;
 }
 
@@ -40,12 +54,27 @@
   align-items: center;
   justify-content: space-between;
   margin-bottom: 1rem;
+  font-style: bold;
 }
 
 .teacher-label {
   font-size: 1rem;
   font-weight: 500;
   color: #222;
+  font-style: bold;
+}
+
+.poll-info {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  padding: 0.5rem 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  color: #666;
+  font-style: bold;
+
 }
 
 .teacher-timer-dropdown {
@@ -94,6 +123,7 @@
   border: 1px solid #eee;
   margin-bottom: 0.5rem;
   resize: none;
+  color: #F2F2F2;
 }
 
 .teacher-char-count {
@@ -108,6 +138,7 @@
   align-items: center;
   margin-bottom: 0.5rem;
   gap: 1rem;
+  color: #F2F2F2;
 }
 
 .teacher-option-item {
@@ -131,6 +162,7 @@
   border-radius: 8px;
   border: 1px solid #eee;
   font-size: 1rem;
+  color: #F2F2F2;
 }
 
 .teacher-option-correct {
@@ -268,16 +300,21 @@
   display: flex;
   align-items: center;
   border-radius: 8px;
-  padding-left: 1rem;
   font-weight: 500;
-  color: #fff;
   background: #7367F0;
   transition: width 0.4s;
+  min-width: 0;
 }
 
 .poll-card-option-text {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
   font-size: 1rem;
-  color: #fff;
+  color: #333;
+  font-weight: 500;
+  z-index: 2;
 }
 
 .poll-card-option-percent {

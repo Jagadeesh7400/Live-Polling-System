@@ -1,3 +1,4 @@
+// Development server that combines API and Socket.io
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
@@ -8,37 +9,13 @@ const server = http.createServer(app);
 
 const io = socketIo(server, {
   cors: {
-    origin: process.env.CLIENT_URL || "http://localhost:3000",
+    origin: "http://localhost:3000",
     methods: ["GET", "POST"]
   }
 });
 
 app.use(cors());
 app.use(express.json());
-
-// Helper function to move current poll to history
-function moveCurrentPollToHistory() {
-  if (currentPoll && Object.keys(pollAnswers).length > 0) {
-    const totalAnswers = Object.keys(pollAnswers).length;
-    const historyPoll = {
-      ...currentPoll,
-      answers: {...pollAnswers},
-      totalAnswers: totalAnswers,
-      id: Date.now(),
-      finishedAt: new Date().toISOString()
-    };
-    
-    // Check if this poll is already in history, if so, update it
-    const existingIndex = pollHistory.findIndex(p => p.question === currentPoll.question && p.createdAt === currentPoll.createdAt);
-    if (existingIndex >= 0) {
-      pollHistory[existingIndex] = historyPoll;
-    } else {
-      pollHistory.push(historyPoll);
-    }
-    
-    console.log('Poll moved to history:', currentPoll.question, 'with', totalAnswers, 'answers');
-  }
-}
 
 // Store poll data
 let currentPoll = null;
@@ -69,11 +46,20 @@ io.on('connection', (socket) => {
   });
 
   socket.on('create_poll', (pollData) => {
-    // Move current poll to history before creating new one
-    moveCurrentPollToHistory();
-    
     currentPoll = pollData;
     pollAnswers = {};
+    
+    // Add to poll history
+    const historyPoll = {
+      ...pollData,
+      id: Date.now(),
+      createdAt: new Date().toISOString(),
+      options: pollData.options.map(opt => ({
+        text: opt,
+        percent: 0
+      }))
+    };
+    pollHistory.push(historyPoll);
     
     io.emit('poll_created', pollData);
     console.log('Poll created and broadcast:', pollData.question);
@@ -162,9 +148,6 @@ app.post('/api/poll', (req, res) => {
       return res.status(400).json({ error: 'Correct answers array must match options length' });
     }
     
-    // Move current poll to history before creating new one
-    moveCurrentPollToHistory();
-    
     currentPoll = {
       id: Date.now(),
       question: question.trim(),
@@ -177,14 +160,14 @@ app.post('/api/poll', (req, res) => {
     // Reset answers for new poll
     pollAnswers = {};
     
-    // Add to poll history (don't add immediately, wait until poll gets answers)
-    // pollHistory.push({
-    //   ...currentPoll,
-    //   options: currentPoll.options.map((opt, idx) => ({
-    //     text: opt,
-    //     percent: 0
-    //   }))
-    // });
+    // Add to poll history
+    pollHistory.push({
+      ...currentPoll,
+      options: currentPoll.options.map((opt, idx) => ({
+        text: opt,
+        percent: 0
+      }))
+    });
 
     // Emit to all connected clients
     io.emit('poll_created', currentPoll);
@@ -290,25 +273,7 @@ app.post('/api/remove-student', (req, res) => {
 
 // Get poll history
 app.get('/api/poll-history', (req, res) => {
-  // Calculate final results for each poll in history
-  const historyWithResults = pollHistory.map(poll => {
-    const totalAnswers = Object.keys(poll.answers || {}).length;
-    const optionsWithPercents = poll.options.map(option => {
-      const count = Object.values(poll.answers || {}).filter(answer => answer === option).length;
-      const percent = totalAnswers > 0 ? Math.round((count / totalAnswers) * 100) : 0;
-      return {
-        text: option,
-        percent: percent
-      };
-    });
-    
-    return {
-      ...poll,
-      options: optionsWithPercents
-    };
-  });
-  
-  res.json(historyWithResults);
+  res.json(pollHistory);
 });
 
 // Clear poll data
