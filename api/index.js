@@ -53,7 +53,39 @@ app.post('/poll', (req, res) => {
     if (options.some(opt => !opt || !opt.trim())) {
       return res.status(400).json({ error: 'All options must have text' });
     }
+
+    // Save previous poll to history with final results
+    if (currentPoll && Object.keys(pollAnswers).length > 0) {
+      const totalAnswers = Object.keys(pollAnswers).length;
+      const pollWithResults = {
+        ...currentPoll,
+        options: currentPoll.options.map((opt, idx) => {
+          const count = Object.values(pollAnswers).filter(answer => answer === opt).length;
+          const percent = totalAnswers > 0 ? Math.round((count / totalAnswers) * 100) : 0;
+          return {
+            text: opt,
+            percent: percent,
+            count: count,
+            isCorrect: currentPoll.correct[idx]
+          };
+        }),
+        totalAnswers: totalAnswers,
+        answeredBy: Object.keys(pollAnswers),
+        completedAt: new Date().toISOString()
+      };
+      
+      // Add to history (or update if already exists)
+      const existingIndex = pollHistory.findIndex(p => p.id === currentPoll.id);
+      if (existingIndex >= 0) {
+        pollHistory[existingIndex] = pollWithResults;
+      } else {
+        pollHistory.push(pollWithResults);
+      }
+      
+      console.log('Previous poll saved to history with results:', pollWithResults);
+    }
     
+    // Create new poll
     currentPoll = {
       id: Date.now(),
       question: question.trim(),
@@ -65,15 +97,6 @@ app.post('/poll', (req, res) => {
     
     // Reset answers for new poll
     pollAnswers = {};
-    
-    // Add to poll history
-    pollHistory.push({
-      ...currentPoll,
-      options: currentPoll.options.map((opt, idx) => ({
-        text: opt,
-        percent: 0 // Will be updated when poll ends
-      }))
-    });
 
     // Emit to all connected clients via Socket.io
     if (req.io) {
@@ -196,7 +219,38 @@ app.post('/remove-student', (req, res) => {
 
 // Get poll history
 app.get('/poll-history', (req, res) => {
-  res.json(pollHistory);
+  const historyToReturn = [...pollHistory];
+  
+  // If there's a current active poll with answers, include it in the history
+  if (currentPoll && Object.keys(pollAnswers).length > 0) {
+    const totalAnswers = Object.keys(pollAnswers).length;
+    const currentPollWithResults = {
+      ...currentPoll,
+      options: currentPoll.options.map((opt, idx) => {
+        const count = Object.values(pollAnswers).filter(answer => answer === opt).length;
+        const percent = totalAnswers > 0 ? Math.round((count / totalAnswers) * 100) : 0;
+        return {
+          text: opt,
+          percent: percent,
+          count: count,
+          isCorrect: currentPoll.correct[idx]
+        };
+      }),
+      totalAnswers: totalAnswers,
+      answeredBy: Object.keys(pollAnswers),
+      isActive: true // Mark as currently active poll
+    };
+    
+    // Check if this poll is already in history and update it, otherwise add it
+    const existingIndex = historyToReturn.findIndex(p => p.id === currentPoll.id);
+    if (existingIndex >= 0) {
+      historyToReturn[existingIndex] = currentPollWithResults;
+    } else {
+      historyToReturn.push(currentPollWithResults);
+    }
+  }
+  
+  res.json(historyToReturn);
 });
 
 // Chat functionality

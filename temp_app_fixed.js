@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./App.css";
 import "./Components/TeacherDashboard.css";
 import TeacherDashboard from "./Components/TeacherDashboard";
@@ -9,8 +9,12 @@ function App() {
   const [selected, setSelected] = useState(null);
   const [teacherLoggedIn, setTeacherLoggedIn] = useState(false);
 
-  // Remove the useEffect that checks localStorage on load
-  // Teacher button starts enabled and only gets disabled after login
+  useEffect(() => {
+    const isTeacherActive = localStorage.getItem("teacherActive");
+    if (isTeacherActive === "true") {
+      setTeacherLoggedIn(true);
+    }
+  }, []);
 
   return (
     <div className="app-container">
@@ -62,7 +66,7 @@ function App() {
               setPersona(selected);
               if (selected === "teacher") {
                 setTeacherLoggedIn(true);
-                // Teacher is now logged in, disable the teacher button for this session
+                localStorage.setItem("teacherActive", "true");
               }
             }}
           >

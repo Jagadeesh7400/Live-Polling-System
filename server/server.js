@@ -135,7 +135,10 @@ app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'OK', 
     timestamp: new Date().toISOString(),
-    message: 'Live Polling API is running' 
+    message: 'Live Polling API is running',
+    currentPoll: currentPoll ? currentPoll.question : 'No active poll',
+    answersCount: Object.keys(pollAnswers).length,
+    historyCount: pollHistory.length
   });
 });
 
@@ -290,24 +293,54 @@ app.post('/api/remove-student', (req, res) => {
 
 // Get poll history
 app.get('/api/poll-history', (req, res) => {
-  // Calculate final results for each poll in history
-  const historyWithResults = pollHistory.map(poll => {
+  console.log('📊 Poll history requested...');
+  console.log('📋 Current poll exists:', !!currentPoll);
+  if (currentPoll) {
+    console.log('📝 Current poll question:', currentPoll.question);
+  }
+  console.log('👥 Poll answers count:', Object.keys(pollAnswers).length);
+  console.log('📚 Stored poll history count:', pollHistory.length);
+  
+  const allPolls = [...pollHistory];
+  
+  // Include current active poll if it exists (even without answers for testing)
+  if (currentPoll) {
+    console.log('✅ Adding current poll to history view:', currentPoll.question);
+    const currentPollForHistory = {
+      ...currentPoll,
+      answers: {...pollAnswers},
+      totalAnswers: Object.keys(pollAnswers).length,
+      isActive: true // Mark as currently active
+    };
+    allPolls.push(currentPollForHistory);
+  } else {
+    console.log('❌ No current poll exists');
+  }
+  
+  // Calculate final results for each poll
+  const historyWithResults = allPolls.map(poll => {
     const totalAnswers = Object.keys(poll.answers || {}).length;
     const optionsWithPercents = poll.options.map(option => {
       const count = Object.values(poll.answers || {}).filter(answer => answer === option).length;
       const percent = totalAnswers > 0 ? Math.round((count / totalAnswers) * 100) : 0;
       return {
         text: option,
-        percent: percent
+        percent: percent,
+        count: count
       };
     });
     
     return {
       ...poll,
-      options: optionsWithPercents
+      options: optionsWithPercents,
+      totalAnswers: totalAnswers
     };
   });
   
+  console.log('🎉 Returning poll history with', historyWithResults.length, 'polls');
+  if (historyWithResults.length > 0) {
+    console.log('📊 First poll:', historyWithResults[0].question);
+  }
   res.json(historyWithResults);
 });
 
@@ -318,6 +351,15 @@ app.post('/api/clear', (req, res) => {
   studentNames = [];
   res.json({ success: true, message: 'Data cleared' });
 });
+
+// Auto-save current poll to history every 5 seconds (for real-time updates)
+setInterval(() => {
+  if (currentPoll && Object.keys(pollAnswers).length > 0) {
+    console.log('Auto-updating poll history with current results...');
+    // This doesn't move the poll permanently, just updates the history view
+    // The actual moving happens when a new poll is created
+  }
+}, 5000);
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {

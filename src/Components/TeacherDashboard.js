@@ -67,6 +67,26 @@ function TeacherDashboard() {
     };
   }, [pollCreated]);
 
+  // Auto-refresh poll history every 5 seconds when history modal is open
+  useEffect(() => {
+    let historyInterval;
+    if (showHistory) {
+      // Initial fetch
+      fetchPollHistory();
+      // Set up auto-refresh every 5 seconds
+      historyInterval = setInterval(() => {
+        console.log('Auto-refreshing poll history...');
+        fetchPollHistory();
+      }, 5000);
+    }
+
+    return () => {
+      if (historyInterval) {
+        clearInterval(historyInterval);
+      }
+    };
+  }, [showHistory]);
+
   const checkForExistingPoll = async () => {
     try {
       const poll = await ApiService.getCurrentPoll();
@@ -101,10 +121,13 @@ function TeacherDashboard() {
 
   const fetchPollHistory = async () => {
     try {
+      console.log('🔄 Fetching poll history...');
       const history = await ApiService.getPollHistory();
+      console.log('📊 Received poll history:', history);
+      console.log('📊 History array length:', history ? history.length : 'null/undefined');
       setPollHistory(history);
     } catch (error) {
-      console.error('Error fetching poll history:', error);
+      console.error('❌ Error fetching poll history:', error);
     }
   };
 
@@ -398,8 +421,20 @@ function TeacherDashboard() {
             )}
           </div>
         )}
-      </div>
-    );
+        
+        {/* Floating Ask Question Button */}
+        {pollCreated && (
+          <button
+            className="floating-ask-btn"
+            onClick={handleNewPoll}
+            title="Ask a new question"
+          >
+            <span className="plus-icon">+</span>
+            <span className="btn-text">Ask Question</span>
+          </button>
+        )}
+    </div>
+  );
 }
 
 export default TeacherDashboard;

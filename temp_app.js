@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./App.css";
 import "./Components/TeacherDashboard.css";
 import TeacherDashboard from "./Components/TeacherDashboard";
@@ -9,8 +9,12 @@ function App() {
   const [selected, setSelected] = useState(null);
   const [teacherLoggedIn, setTeacherLoggedIn] = useState(false);
 
-  // Remove the useEffect that checks localStorage on load
-  // Teacher button starts enabled and only gets disabled after login
+  useEffect(() => {
+    const isTeacherActive = localStorage.getItem("teacherActive");
+    if (isTeacherActive === "true") {
+      setTeacherLoggedIn(true);
+    }
+  }, []);
 
   return (
     <div className="app-container">
@@ -31,7 +35,7 @@ function App() {
               className={`role-card${selected === "student" ? " selected" : ""}`}
               onClick={() => setSelected("student")}
             >
-              <div className="role-card-title">I'm a Student</div>
+              <div className="role-card-title">I am a Student</div>
               <div className="role-card-desc">
                 Lorem Ipsum is simply dummy text of the printing and typesetting industry
               </div>
@@ -45,7 +49,7 @@ function App() {
               }}
             >
               <div className="role-card-title">
-                I'm a Teacher {teacherLoggedIn && "(Currently Active)"}
+                I am a Teacher {teacherLoggedIn && "(Currently Active)"}
               </div>
               <div className="role-card-desc">
                 {teacherLoggedIn ? 
@@ -62,7 +66,7 @@ function App() {
               setPersona(selected);
               if (selected === "teacher") {
                 setTeacherLoggedIn(true);
-                // Teacher is now logged in, disable the teacher button for this session
+                localStorage.setItem("teacherActive", "true");
               }
             }}
           >
