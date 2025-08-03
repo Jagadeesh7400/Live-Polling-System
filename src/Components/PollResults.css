@@ -1,0 +1,124 @@
+.poll-history-container {
+  max-width: 700px;
+  margin: 40px auto;
+  padding-bottom: 2rem;
+}
+
+.poll-history-title {
+  font-size: 2rem;
+  font-weight: 500;
+  margin-bottom: 2.5rem;
+  letter-spacing: -1px;
+}
+
+.poll-history-title strong {
+  font-weight: 700;
+}
+
+.poll-history-block {
+  margin-bottom: 2.5rem;
+}
+
+.poll-history-question {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin-bottom: 0.7rem;
+}
+
+.poll-card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(59,130,246,0.08);
+  border: 1.5px solid #E5E7EB;
+  padding-bottom: 1.2rem;
+  margin-bottom: 1rem;
+}
+
+.poll-card-header {
+  background: linear-gradient(90deg, #444 60%, #888 100%);
+  color: #fff;
+  font-size: 1.08rem;
+  font-weight: 500;
+  border-radius: 12px 12px 0 0;
+  padding: 0.8rem 1.2rem;
+}
+
+.poll-card-options {
+  padding: 1.2rem 1.2rem 0.2rem 1.2rem;
+}
+
+.poll-card-option-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.7rem;
+  background: #F7F8FA;
+  border-radius: 8px;
+  position: relative;
+  height: 40px;
+  border: 1.5px solid #7367F0;
+}
+
+.poll-card-option-index {
+  width: 32px;
+  height: 32px;
+  background: #7367F0;
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 1rem;
+  margin-left: 8px;
+  margin-right: 12px;
+}
+
+.poll-card-option-bar-wrap {
+  flex: 1;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.poll-card-option-bar {
+  height: 100%;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  padding-left: 16px;
+  color: #fff;
+  font-weight: 500;
+  font-size: 1rem;
+  transition: width 0.4s;
+  background: #7367F0;
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+.poll-card-option-text {
+  position: relative;
+  z-index: 2;
+}
+
+.poll-card-option-percent {
+  width: 60px;
+  text-align: right;
+  font-weight: 600;
+  font-size: 1rem;
+  color: #222;
+  margin-right: 12px;
+  margin-left: 12px;
+  z-index: 2;
+}
+
+@media (max-width: 700px) {
+  .poll-history-container {
+    padding: 0 0.5rem;
+  }
+  .poll-card-header, .poll-card-options {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+}
