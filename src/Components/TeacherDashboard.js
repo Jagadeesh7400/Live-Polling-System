@@ -90,23 +90,41 @@ function TeacherDashboard() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (question.trim() && options.every(opt => opt.text.trim())) {
-      setIsLoading(true);
-      try {
-        await ApiService.createPoll({
-          question,
-          options: options.map(opt => opt.text),
-          correct: options.map(opt => opt.correct),
-          timer
-        });
-        setPollCreated(true);
-        fetchResults();
-      } catch (error) {
-        console.error('Error creating poll:', error);
-        alert('Failed to create poll. Please try again.');
-      } finally {
-        setIsLoading(false);
-      }
+    
+    // Validation
+    if (!question.trim()) {
+      alert('Please enter a question.');
+      return;
+    }
+    
+    if (options.length < 2) {
+      alert('Please provide at least 2 options.');
+      return;
+    }
+    
+    if (!options.every(opt => opt.text.trim())) {
+      alert('Please fill in all option texts.');
+      return;
+    }
+    
+    setIsLoading(true);
+    try {
+      const pollData = {
+        question: question.trim(),
+        options: options.map(opt => opt.text.trim()),
+        correct: options.map(opt => opt.correct),
+        timer
+      };
+      
+      console.log('Creating poll with data:', pollData);
+      await ApiService.createPoll(pollData);
+      setPollCreated(true);
+      fetchResults();
+    } catch (error) {
+      console.error('Error creating poll:', error);
+      alert(`Failed to create poll: ${error.message}`);
+    } finally {
+      setIsLoading(false);
     }
   };
 

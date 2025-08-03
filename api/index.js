@@ -33,21 +33,53 @@ app.get('/api/poll', (req, res) => {
 
 // Create a new poll
 app.post('/api/poll', (req, res) => {
-  const { question, options, correct, timer } = req.body;
-  
-  currentPoll = {
-    id: Date.now(),
-    question,
-    options,
-    correct,
-    timer: timer || 60,
-    createdAt: new Date().toISOString()
-  };
-  
-  // Reset answers for new poll
-  pollAnswers = {};
-  
-  res.json(currentPoll);
+  try {
+    const { question, options, correct, timer } = req.body;
+    
+    // Validate required fields
+    if (!question || !question.trim()) {
+      return res.status(400).json({ error: 'Question is required' });
+    }
+    
+    if (!options || !Array.isArray(options) || options.length < 2) {
+      return res.status(400).json({ error: 'At least 2 options are required' });
+    }
+    
+    if (!correct || !Array.isArray(correct) || correct.length !== options.length) {
+      return res.status(400).json({ error: 'Correct answers array must match options length' });
+    }
+    
+    // Validate that all options have text
+    if (options.some(opt => !opt || !opt.trim())) {
+      return res.status(400).json({ error: 'All options must have text' });
+    }
+    
+    currentPoll = {
+      id: Date.now(),
+      question: question.trim(),
+      options: options.map(opt => opt.trim()),
+      correct,
+      timer: timer || 60,
+      createdAt: new Date().toISOString()
+    };
+    
+    // Reset answers for new poll
+    pollAnswers = {};
+    
+    // Add to poll history
+    pollHistory.push({
+      ...currentPoll,
+      options: currentPoll.options.map((opt, idx) => ({
+        text: opt,
+        percent: 0 // Will be updated when poll ends
+      }))
+    });
+    
+    res.json(currentPoll);
+  } catch (error) {
+    console.error('Error creating poll:', error);
+    res.status(500).json({ error: 'Internal server error while creating poll' });
+  }
 });
 
 // Submit an answer
@@ -103,6 +135,27 @@ app.post('/api/join', (req, res) => {
 // Get student names
 app.get('/api/students', (req, res) => {
   res.json(studentNames);
+});
+
+// Remove student (kick out)
+app.post('/api/remove-student', (req, res) => {
+  const { name } = req.body;
+  
+  if (!name) {
+    return res.status(400).json({ error: 'Student name is required' });
+  }
+  
+  // Remove from student names
+  studentNames = studentNames.filter(student => student !== name);
+  
+  // Remove their poll answer if exists
+  delete pollAnswers[name];
+  
+  res.json({ 
+    success: true, 
+    message: `Student ${name} has been removed`,
+    remainingStudents: studentNames
+  });
 });
 
 // Get poll history

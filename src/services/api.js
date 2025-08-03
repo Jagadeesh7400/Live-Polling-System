@@ -13,20 +13,36 @@ class ApiService {
   }
 
   async post(endpoint, data) {
-    const response = await fetch(`${API_BASE}/api${endpoint}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data),
-    });
-    
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || `API Error: ${response.statusText}`);
+    try {
+      console.log(`Making POST request to ${API_BASE}/api${endpoint}`, data);
+      
+      const response = await fetch(`${API_BASE}/api${endpoint}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+      
+      if (!response.ok) {
+        let errorMessage;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || `API Error: ${response.statusText}`;
+        } catch (e) {
+          errorMessage = `API Error: ${response.statusText}`;
+        }
+        console.error('API Error Response:', response.status, errorMessage);
+        throw new Error(errorMessage);
+      }
+      
+      const result = await response.json();
+      console.log('API Success Response:', result);
+      return result;
+    } catch (error) {
+      console.error('API Request Failed:', error);
+      throw error;
     }
-    
-    return response.json();
   }
 
   // Poll management
