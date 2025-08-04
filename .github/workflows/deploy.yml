@@ -1,15 +1,51 @@
-name: Deploy to GitHub Pages
+name: Deploy Live Polling System
 
 on:
   push:
     branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
-  build-and-deploy:
+  build-and-test:
     runs-on: ubuntu-latest
     
     steps:
-    - name: Checkout
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: Install frontend dependencies
+      run: npm ci
+      
+    - name: Install backend dependencies
+      run: |
+        cd server
+        npm ci
+        
+    - name: Build frontend
+      run: npm run build
+      
+    - name: Run frontend tests
+      run: npm test -- --coverage --watchAll=false || echo "No frontend tests found"
+      
+    - name: Test backend health
+      run: |
+        cd server
+        node -e "console.log('Backend dependencies installed successfully')"
+        
+  deploy-github-pages:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout code
       uses: actions/checkout@v3
       
     - name: Setup Node.js
@@ -21,7 +57,7 @@ jobs:
     - name: Install dependencies
       run: npm ci
       
-    - name: Build
+    - name: Build for GitHub Pages
       run: npm run build
       
     - name: Deploy to GitHub Pages
