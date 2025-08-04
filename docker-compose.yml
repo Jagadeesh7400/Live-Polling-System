@@ -1,28 +1,28 @@
 version: '3.8'
 
 services:
-  frontend:
+  # Development services
+  dev-frontend:
     build:
       context: .
       dockerfile: Dockerfile
-      target: frontend-build
     ports:
       - "3000:3000"
     environment:
       - NODE_ENV=development
-      - REACT_APP_SERVER_URL=http://localhost:5000
+      - VITE_API_URL=http://localhost:5000
+      - VITE_SOCKET_URL=http://localhost:5000
     volumes:
       - ./src:/app/src
       - ./public:/app/public
     command: npm start
-    depends_on:
-      - backend
+    profiles:
+      - dev
 
-  backend:
+  dev-backend:
     build:
-      context: .
-      dockerfile: Dockerfile
-      target: backend
+      context: ./server
+      dockerfile: ../Dockerfile
     ports:
       - "5000:5000"
     environment:
@@ -31,15 +31,14 @@ services:
       - CLIENT_URL=http://localhost:3000
     volumes:
       - ./server:/app/server
-      - ./api:/app/api
-    command: npm run dev
-    restart: unless-stopped
+    profiles:
+      - dev
 
+  # Production service (simplified)
   production:
     build:
       context: .
       dockerfile: Dockerfile
-      target: production
     ports:
       - "5000:5000"
     environment:

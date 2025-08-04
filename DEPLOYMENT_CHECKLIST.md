@@ -1,4 +1,5 @@
 # 🚀 DEPLOYMENT CHECKLIST - Live Polling System
+## **RECOMMENDED: Railway + Vercel Deployment**
 
 ## ✅ PRE-DEPLOYMENT COMPLETED
 - [x] Code pushed to GitHub: `https://github.com/Jagadeesh7400/Live-Polling-System`
@@ -20,10 +21,13 @@
 4. [ ] Choose `Jagadeesh7400/Live-Polling-System`
 
 ### Configure Backend Service:
-1. [ ] Click on the deployed service
-2. [ ] Go to "Settings" tab
-3. [ ] Set "Root Directory" to: `server`
-4. [ ] Or create new service for backend only
+**⚠️ IMPORTANT**: Railway will try to deploy the whole project. We need backend only.
+1. [ ] After initial deployment, click on your project
+2. [ ] Click "Settings" 
+3. [ ] Scroll to "Source Repo"
+4. [ ] Set "Root Directory" to: `server`
+5. [ ] Click "Update"
+6. [ ] This will redeploy with only the backend
 
 ### Set Environment Variables:
 Go to "Variables" tab and add:
