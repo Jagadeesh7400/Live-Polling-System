@@ -33,12 +33,12 @@
 
 ### **STEP 4: Set Environment Variables**
 1. **Go to**: "Variables" tab in your Railway project
-2. **Add these variables**:
+2. **Add these variables ONLY**:
    ```
    NODE_ENV=production
-   PORT=${{ PORT }}
    CLIENT_URL=https://live-polling-system.vercel.app
    ```
+   **⚠️ DO NOT ADD PORT - Railway provides this automatically**
 3. **Click**: "Add Variable" for each one
 
 ### **STEP 5: Verify Deployment**

@@ -45,9 +45,9 @@ web-production-200a.up.railway.app - not resolving
 ### **3. Set Environment Variables:**
 ```
 NODE_ENV=production
-PORT=${{ PORT }}
 CLIENT_URL=https://live-polling-system.vercel.app
 ```
+**⚠️ DO NOT ADD PORT VARIABLE - Railway handles this automatically**
 
 ### **4. Get Your New Railway URL:**
 - After successful deployment
