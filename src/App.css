@@ -29,7 +29,6 @@ body {
   color: #fff;
   font-size: 0.75rem;
   font-weight: 400;
-  
   box-shadow: 0 2px 8px rgba(124,58,237,0.08);
 }
 
@@ -48,6 +47,7 @@ body {
   color: #6B7280;
   font-size: 1.08rem;
   margin-bottom: 2.2rem;
+  max-width: 600px;
 }
 
 .role-cards {
