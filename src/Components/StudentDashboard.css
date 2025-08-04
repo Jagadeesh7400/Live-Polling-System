@@ -82,7 +82,7 @@
 }
 
 .student-poll-form {
-  max-width: 1540px;
+  width: 600px;
   margin: 0 auto;
   background: none;
   box-shadow: none;
@@ -195,11 +195,11 @@
   box-shadow: 0 2px 8px rgba(59,130,246,0.12);
   cursor: pointer;
   margin-top: 1rem;
-  width: 220px;
+  
 }
 
 .student-results {
-  max-width: 400px;
+  max-width: 1400px;
   margin: 0 auto;
   background: #fff;
   border-radius: 12px;
