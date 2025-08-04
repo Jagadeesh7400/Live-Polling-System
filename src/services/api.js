@@ -1,7 +1,11 @@
 // API service for polling system
-const API_BASE = process.env.NODE_ENV === 'production' 
-  ? window.location.origin 
-  : 'http://localhost:5000';
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
+console.log('API Configuration:', {
+  VITE_API_URL: import.meta.env.VITE_API_URL,
+  NODE_ENV: import.meta.env.NODE_ENV,
+  API_BASE: API_BASE
+});
 
 class ApiService {
   async get(endpoint) {
